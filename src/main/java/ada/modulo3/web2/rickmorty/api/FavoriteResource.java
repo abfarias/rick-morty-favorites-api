@@ -2,9 +2,8 @@ package ada.modulo3.web2.rickmorty.api;
 
 import ada.modulo3.web2.rickmorty.service.FavoriteService;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 @Path("/api/v1/personagens/favorito")
@@ -12,6 +11,8 @@ public class FavoriteResource {
 
     @Inject
     FavoriteService favoriteService;
+
+
 
     /**
      * DELETE /api/v1/personagens/favorito/{id}
@@ -25,4 +26,18 @@ public class FavoriteResource {
         // Retorna 204 No Content conforme especificado no README
         return Response.noContent().build();
     }
+    /**
+     * GET /api/v1/personagens/favoritos
+     * Lista todos os personagens favoritos com dados agregados.
+     */
+    @GET
+    @Path("/favoritos")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getFavorites() {
+        return Response.ok(favoriteService.getFavorites()).build();
+    }
+
 }
+
+
+
