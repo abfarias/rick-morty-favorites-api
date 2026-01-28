@@ -4,7 +4,17 @@ O projeto consiste no desenvolvimento de uma API RESTful em Java com Quarkus que
 
 A aplicação mantém apenas os dados próprios do domínio, como personagens favoritos, notas e comentários, enquanto os dados oficiais dos personagens são obtidos da API externa e armazenados temporariamente em cache, reduzindo chamadas externas e melhorando o desempenho.
 
-A estratégia de cache adotada é baseada em tempo de vida (**TTL**), aplicada exclusivamente aos dados externos, mantendo a aplicação *stateless* e respeitando os princípios REST.
+A estratégia de cache adotada é baseada em tempo de vida (**TTL**).
+
+## Tecnologias utilizadas
+
+- **Java 21**
+- **Quarkus 3.30.7** (framework REST)
+- **Hibernate ORM + Panache** (persistência)
+- **H2 Database** (banco de dados em memória para desenvolvimento)
+- **Caffeine Cache** (estratégia de cache com TTL)
+- **Bean Validation** (validações automáticas)
+- **REST Client** (consumo da API externa)
 
 ## API pública utilizada
 
@@ -182,6 +192,10 @@ Content-Type: application/json
 }
 ```
 
+**Validações**:
+- Nota: obrigatória, valor entre 1 e 5
+- Comentário: obrigatório, entre 3 e 500 caracteres
+
 **Response 201**
 
 ```json
@@ -299,6 +313,10 @@ Content-Type: application/json
 }
 ```
 
+**Validações**:
+- Nota: obrigatória, valor entre 1 e 5
+- Comentário: obrigatório, entre 3 e 500 caracteres
+
 **Response 200**
 
 ```json
@@ -351,3 +369,112 @@ Sem conteúdo no corpo da resposta.
 |-------------------------|--------|
 | Favorito não encontrado | 404    |
 | Erro inesperado         | 500    |
+
+---
+
+## Arquitetura do projeto
+
+### Estrutura de pacotes
+
+```
+ada.modulo3.web2.rickmorty/
+├── api/                    # Controllers (REST endpoints)
+│   ├── CharacterResource.java
+│   └── FavoriteResource.java
+├── client/                 # REST Client para API externa
+│   └── RickAndMortyClient.java
+├── dto/                    # Data Transfer Objects
+│   ├── CharacterDTO.java
+│   ├── CharacterPageDTO.java
+│   ├── FavoriteRequestDTO.java
+│   ├── FavoriteResponseDTO.java
+│   ├── FavoriteWithCharacterDTO.java
+│   ├── RickAndMortyCharacterDTO.java
+│   └── RickAndMortyPageDTO.java
+├── entity/                 # Entidades JPA
+│   └── FavoriteCharacter.java
+├── exception/              # Exceções customizadas e mappers
+│   ├── NotFoundException.java
+│   ├── ConflictException.java
+│   ├── BadRequestException.java
+│   ├── ExternalServiceUnavailableException.java
+│   ├── NotFoundExceptionMapper.java
+│   ├── ConflictExceptionMapper.java
+│   ├── BadRequestExceptionMapper.java
+│   └── ExternalServiceUnavailableExceptionMapper.java
+├── mapper/                 # Conversores entre DTOs e Entities
+│   ├── CharacterMapper.java
+│   ├── FavoriteMapper.java
+│   └── FavoriteWithCharacterMapper.java
+├── repository/             # Repositórios Panache
+│   └── FavoriteCharacterRepository.java
+└── service/                # Lógica de negócio
+    ├── CharacterService.java
+    └── FavoriteService.java
+```
+
+### Modelo de dados
+
+**Tabela: `favorite_character`**
+
+| Coluna                  | Tipo         | Constraints              |
+|-------------------------|--------------|--------------------------|
+| id                      | BIGINT       | PK, AUTO_INCREMENT       |
+| external_character_id   | BIGINT       | NOT NULL, UNIQUE         |
+| nota                    | INTEGER      | NOT NULL                 |
+| comentario              | VARCHAR(500) | NOT NULL                 |
+
+### Estratégia de Cache
+
+O projeto utiliza **Caffeine Cache** com três níveis:
+
+1. **character-page** - TTL: 5 minutos
+   - Cacheia páginas de personagens da API externa
+   - Chave: número da página
+
+2. **character-by-id** - TTL: 10 minutos
+   - Cacheia personagens individuais da API externa
+   - Chave: ID do personagem
+
+3. **favorites-list** - TTL: 5 minutos
+   - Cacheia a lista agregada de favoritos com dados externos
+   - Invalidado automaticamente em POST, PUT e DELETE de favoritos
+
+---
+
+## Como executar o projeto
+
+### Pré-requisitos
+
+- Java 21+
+- Maven 3.8+
+
+### Executar em modo desenvolvimento
+
+```bash
+./mvnw quarkus:dev
+```
+
+A aplicação estará disponível em: `http://localhost:8080`
+
+### Endpoints disponíveis
+
+- `GET /api/v1/personagens?page={page}` - Listar personagens
+- `GET /api/v1/personagens/{id}` - Buscar personagem por ID
+- `GET /api/v1/personagens/favoritos` - Listar favoritos
+- `POST /api/v1/personagens/favorito/{id}` - Favoritar personagem
+- `PUT /api/v1/personagens/favorito/{id}` - Atualizar favorito
+- `DELETE /api/v1/personagens/favorito/{id}` - Remover favorito
+
+---
+
+## Equipe de desenvolvimento
+
+| Membro  | Endpoint implementado                  |
+|---------|----------------------------------------|
+| Arthur  | GET /api/v1/personagens (listar)      |
+| Edgar   | GET /api/v1/personagens/{id} (buscar)  |
+| Ronaldo | POST /favorito/{id} (favoritar)        |
+| Cintia  | GET /favoritos (listar favoritos)      |
+| Ariel   | PUT /favorito/{id} (atualizar)         |
+| Leonardo| DELETE /favorito/{id} (remover)        |
