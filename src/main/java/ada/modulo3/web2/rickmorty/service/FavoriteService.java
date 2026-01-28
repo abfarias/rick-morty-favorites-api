@@ -11,6 +11,8 @@ import ada.modulo3.web2.rickmorty.exception.NotFoundException;
 import ada.modulo3.web2.rickmorty.mapper.FavoriteMapper;
 import ada.modulo3.web2.rickmorty.mapper.FavoriteWithCharacterMapper;
 import ada.modulo3.web2.rickmorty.repository.FavoriteCharacterRepository;
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -43,6 +45,7 @@ public class FavoriteService {
      * 4. Retorna o favorito criado
      */
     @Transactional
+    @CacheInvalidateAll(cacheName = "favorites-list")
     public FavoriteResponseDTO addFavorite(Long idPersonagem, FavoriteRequestDTO request) {
         // 1. Valida se o personagem existe na API externa (reutiliza cache do endpoint 2)
         // Se não existir, CharacterService lança NotFoundException
@@ -75,6 +78,7 @@ public class FavoriteService {
      * - Agrega dados usando FavoriteWithCharacterMapper
      * - Retorna lista final (ou lista vazia se não houver favoritos)
      */
+    @CacheResult(cacheName = "favorites-list")
     public List<FavoriteWithCharacterDTO> getFavorites() {
         List<FavoriteCharacter> favoritos = favoriteRepository.listAll();
 
@@ -110,10 +114,34 @@ public class FavoriteService {
     }
 
     /**
+     * Atualiza um favorito existente.
+     *
+     * Fluxo:
+     * 1. Busca o favorito no banco de dados
+     * 2. Se não existir, lança NotFoundException (404)
+     * 3. Atualiza nota e comentário
+     * 4. Retorna o favorito atualizado
+     */
+    @Transactional
+    @CacheInvalidateAll(cacheName = "favorites-list")
+    public FavoriteResponseDTO updateFavorite(Long idPersonagem, FavoriteRequestDTO request) {
+        // 1. Busca o favorito no banco
+        FavoriteCharacter entity = favoriteRepository.findByIdPersonagem(idPersonagem)
+                .orElseThrow(() -> new NotFoundException("Favorito não encontrado para o ID: " + idPersonagem));
+
+        // 2. Atualiza os dados
+        favoriteMapper.updateEntityFromDTO(entity, request);
+
+        // 3. Retorna o DTO de resposta
+        return favoriteMapper.toResponseDTO(entity);
+    }
+
+    /**
      * Remove um favorito baseado no ID do personagem (ID externo).
      * Se não encontrar registros deletados, lança NotFoundException.
      */
     @Transactional
+    @CacheInvalidateAll(cacheName = "favorites-list")
     public void removeFavorite(Long idPersonagem) {
         // O método delete do Panache retorna a quantidade de linhas deletadas
         long deletedCount = favoriteRepository.delete("idPersonagem", idPersonagem);
