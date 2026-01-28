@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -47,6 +48,27 @@ public class FavoriteResource {
         return Response.status(Response.Status.CREATED)
                 .entity(response)
                 .build();
+    }
+
+    /**
+     * PUT /api/v1/personagens/favorito/{id}
+     * Atualiza nota e comentário de um favorito.
+     *
+     * Fluxo:
+     * - Atualiza nota e comentário no banco
+     * - Não altera dados da API externa
+     *
+     * Retorna 200 OK com o favorito atualizado.
+     */
+    @PUT
+    @Path("/favorito/{id}")
+    public Response updateFavorite(
+            @PathParam("id") Long id,
+            @Valid FavoriteRequestDTO request) {
+
+        FavoriteResponseDTO response = favoriteService.updateFavorite(id, request);
+
+        return Response.ok(response).build();
     }
 
     /**
