@@ -2,34 +2,42 @@ package ada.modulo3.web2.rickmorty.api;
 
 import ada.modulo3.web2.rickmorty.dto.FavoriteRequestDTO;
 import ada.modulo3.web2.rickmorty.dto.FavoriteResponseDTO;
+import ada.modulo3.web2.rickmorty.dto.FavoriteWithCharacterDTO;
 import ada.modulo3.web2.rickmorty.service.FavoriteService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-@Path("/api/v1/personagens/favorito")
+import java.util.List;
+
+@Path("/api/v1/personagens")
+@Produces(MediaType.APPLICATION_JSON)
 public class FavoriteResource {
 
     @Inject
     FavoriteService favoriteService;
 
     /**
+     * GET /api/v1/personagens/favoritos
+     */
+    @GET
+    @Path("/favoritos")
+    public List<FavoriteWithCharacterDTO> getFavorites() {
+        return favoriteService.getFavorites();
+    }
+
+    /**
      * POST /api/v1/personagens/favorito/{id}
-     * Favorita um personagem.
-     *
-     * Fluxo:
-     * - Valida se o personagem existe na API externa (reutiliza cache)
-     * - Verifica se já está favoritado
-     * - Salva no banco: ID externo, nota, comentário
-     *
-     * Retorna 201 Created com o favorito criado.
      */
     @POST
-    @Path("/{id}")
+    @Path("/favorito/{id}")
     public Response addFavorite(
             @PathParam("id") Long id,
             @Valid FavoriteRequestDTO request) {
@@ -43,14 +51,12 @@ public class FavoriteResource {
 
     /**
      * DELETE /api/v1/personagens/favorito/{id}
-     * Remove o favorito do banco de dados.
      */
     @DELETE
-    @Path("/{id}")
+    @Path("/favorito/{id}")
     public Response removeFavorite(@PathParam("id") Long id) {
         favoriteService.removeFavorite(id);
 
-        // Retorna 204 No Content conforme especificado no README
         return Response.noContent().build();
     }
 }
