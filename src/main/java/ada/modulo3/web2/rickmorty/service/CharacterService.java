@@ -33,7 +33,7 @@ public class CharacterService {
     @CacheResult(cacheName = "character-page")
     public CharacterPageDTO getCharacterPage(Integer page) {
         if (page == null || page < 1) {
-            throw new BadRequestException("Página inválida");
+            throw new BadRequestException("Página inválida: " + page);
         }
 
         try {
@@ -51,7 +51,7 @@ public class CharacterService {
     @CacheResult(cacheName = "character-by-id")
     public CharacterDTO getCharacterById(Long id) {
         if (id == null || id < 1) {
-            throw new BadRequestException("ID inválido");
+            throw new BadRequestException("ID inválido: " + id);
         }
 
         try {
@@ -59,7 +59,7 @@ public class CharacterService {
             return characterMapper.toCharacterDTO(externalChar);
 
         } catch (jakarta.ws.rs.NotFoundException e) {
-            throw new NotFoundException("Personagem não encontrado na API externa");
+            throw new NotFoundException("Personagem não encontrado para o ID: " + id);
         } catch (Exception e) {
             throw new ExternalServiceUnavailableException("API Rick and Morty indisponível");
         }

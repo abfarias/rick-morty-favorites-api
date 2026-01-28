@@ -51,7 +51,7 @@ public class FavoriteService {
 
         // 2. Verifica se já está favoritado
         if (favoriteRepository.existsByIdPersonagem(idPersonagem)) {
-            throw new ConflictException("Personagem já favoritado: " + idPersonagem);
+            throw new ConflictException("Personagem já está favoritado para o ID: " + idPersonagem);
         }
 
         // 3. Cria e persiste a entidade
